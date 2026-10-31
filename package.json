@@ -1,0 +1,246 @@
+{
+  "name": "codex-consumption-vscode",
+  "displayName": "Codex Consumption",
+  "description": "Animated cyberpunk dashboard for Codex: agents, tools, tokens, context, estimated API costs, memory and subscription quotas from local transcripts.",
+  "version": "0.1.1",
+  "publisher": "abdellatifelmizeb",
+  "author": {
+    "name": "Abdellatif El Mizeb"
+  },
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aelmizeb/codex-consumption-vscode.git"
+  },
+  "engines": {
+    "vscode": "^1.100.0",
+    "node": ">=22"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "codex",
+    "openai",
+    "tokens",
+    "cost",
+    "agents",
+    "usage"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "codex-consumption",
+          "title": "Codex Consumption",
+          "icon": "resources/view-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codexSecondaryViewContainer": [
+        {
+          "type": "webview",
+          "id": "codexConsumption.fleetInCodex",
+          "name": "Codex Consuption",
+          "icon": "resources/view-icon.svg",
+          "contextualTitle": "Codex Consuption",
+          "when": "codexConsumption.dock == codex"
+        }
+      ],
+      "codex-consumption": [
+        {
+          "type": "webview",
+          "id": "codexConsumption.fleet",
+          "name": "Codex Consuption",
+          "icon": "resources/view-icon.svg",
+          "contextualTitle": "Codex Consuption",
+          "when": "codexConsumption.dock != codex"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codexConsumption.open",
+        "title": "Open Panel",
+        "category": "Codex Consumption",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "codexConsumption.refresh",
+        "title": "Refresh",
+        "category": "Codex Consumption",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "codexConsumption.rescanCosts",
+        "title": "Rescan Week and Month Costs",
+        "category": "Codex Consumption",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "codexConsumption.showLog",
+        "title": "Show Log",
+        "category": "Codex Consumption"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codexConsumption.refresh",
+          "when": "view == codexConsumption.fleet || view == codexConsumption.fleetInCodex",
+          "group": "navigation@1"
+        },
+        {
+          "command": "codexConsumption.rescanCosts",
+          "when": "view == codexConsumption.fleet || view == codexConsumption.fleetInCodex",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Codex Consumption",
+      "properties": {
+        "codexConsumption.dock": {
+          "type": "string",
+          "enum": [
+            "codex",
+            "own"
+          ],
+          "enumDescriptions": [
+            "Below the Codex chat when the OpenAI Codex extension is installed.",
+            "In its own Codex Consumption container in the secondary side bar."
+          ],
+          "default": "codex",
+          "description": "Where the panel is placed."
+        },
+        "codexConsumption.scope": {
+          "type": "string",
+          "enum": [
+            "workspace",
+            "all"
+          ],
+          "enumDescriptions": [
+            "Codex sessions in the open workspace folders and their subfolders.",
+            "Every local Codex session."
+          ],
+          "default": "workspace",
+          "description": "Which sessions the panel follows. The tower is the most recently active session."
+        },
+        "codexConsumption.configDir": {
+          "type": "string",
+          "default": "",
+          "description": "Codex home directory. Empty: CODEX_HOME, otherwise ~/.codex."
+        },
+        "codexConsumption.pollSeconds": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "description": "How often the transcripts are re-read, in seconds."
+        },
+        "codexConsumption.idleAfterSeconds": {
+          "type": "number",
+          "default": 600,
+          "minimum": 30,
+          "description": "Without transcript activity for longer than this, the session is considered idle."
+        },
+        "codexConsumption.contextWindow": {
+          "type": "number",
+          "default": 0,
+          "description": "Override context window size in tokens. 0: use the model context window reported by Codex; unknown stays blank.",
+          "minimum": 0
+        },
+        "codexConsumption.compareWithDeepSeek": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the equivalent DeepSeek token cost using comparisonPrice, and the Codex / DeepSeek ratio."
+        },
+        "codexConsumption.customPrices": {
+          "type": "object",
+          "default": {},
+          "description": "Per-model API price overrides, in USD per million tokens. Useful for unrecognized models. These are estimates, not subscription charges.",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "input",
+              "output",
+              "cacheRead"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "input": {
+                "type": "number",
+                "minimum": 0
+              },
+              "output": {
+                "type": "number",
+                "minimum": 0
+              },
+              "cacheRead": {
+                "type": "number",
+                "minimum": 0
+              },
+              "cacheWrite": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "codexConsumption.comparisonPrice": {
+          "type": "object",
+          "required": [
+            "input",
+            "output",
+            "cacheRead"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "number",
+              "minimum": 0
+            },
+            "output": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cacheRead": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cacheWrite": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "default": {
+            "input": 1.32,
+            "output": 3.96,
+            "cacheRead": 0.044
+          },
+          "description": "DeepSeek V4 Pro comparison rates in USD per million tokens. Defaults: peak rates checked 2026-10-31."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node --test --test-isolation=none out/test/*.test.js",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/vsce": "^3.6.0",
+    "typescript": "^5.6.0"
+  }
+}
