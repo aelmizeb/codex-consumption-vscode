@@ -233,7 +233,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
-    "test": "node --test --test-isolation=none out/test/*.test.js",
+    "test": "node --test out/test/*.test.js",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package --no-dependencies"
   },
